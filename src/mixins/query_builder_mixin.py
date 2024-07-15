@@ -34,6 +34,13 @@ class DataType:
             f"{" NOT NULL" if not null else ""}"
         )
 
+    @staticmethod
+    def blob(null: bool = True, default=None):
+        return (
+            f"BLOB{f" DEFAULT {default}" if default is not None else ""}"
+            f"{" NOT NULL" if not null else ""}"
+        )
+
 
 class QueryBuilderMixin:
     __statement: Optional[str] = None

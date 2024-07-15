@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Optional
 from src.models.models import User as UserModel
 from src.utils import helpers
-import os
 
 
 @dataclass
@@ -10,23 +9,16 @@ class User:
     id: int
     email: str
     password: str
-    passcode: str | None
-    attempts = 3
+    key: bytes
+    salt: bytes
     theme_color: str
     color_mode: str
     lock_timer: int
-
-    def reset_attempts(self):
-        self.attempts = 3
-
-    def decrease_attempts(self):
-        self.attempts -= 1
 
     def update(self):
         user = UserModel.find_by_id(self.id)
         self.email = user["email"]
         self.password = user["password"]
-        self.passcode = user["passcode"]
         self.theme_color = user["theme_color"]
         self.color_mode = user["color_mode"]
         self.lock_timer = user["lock_timer"]
@@ -36,6 +28,7 @@ class User:
 class Credentials:
     email: str
     password: str
+    key: str
 
 
 class Auth:
@@ -46,13 +39,14 @@ class Auth:
         user = UserModel.find_by("email = ?", [credentials.email,], limit=1)
 
         if user:
-            user_password = helpers.decrypt(user["password"], os.getenv("CIPHER_KEY"))
-            if helpers.verify_password(user_password, credentials.password):
+            if (helpers.verify_password(user["password"], credentials.password)
+                    and helpers.verify_password(user["key"], credentials.key)):
                 cls.user = User(
                     id=user["id"],
                     email=user["email"],
-                    passcode=user["passcode"],
                     password=user["password"],
+                    key=helpers.get_key(credentials.key, user["salt"]),
+                    salt=user["salt"],
                     theme_color=user["theme_color"],
                     color_mode=user["color_mode"],
                     lock_timer=user["lock_timer"]

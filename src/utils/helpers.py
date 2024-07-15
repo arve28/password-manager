@@ -1,3 +1,4 @@
+import hashlib
 import json
 import random
 import re
@@ -5,9 +6,8 @@ import sys
 import bcrypt
 import customtkinter
 import colorsys
-from cryptography.fernet import Fernet
-from dotenv import load_dotenv, dotenv_values
 import os
+from Crypto.Cipher import AES
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.pdfencrypt import StandardEncryption
@@ -42,16 +42,14 @@ def regexp(expr, item):
 
 
 def hash_password(password: str) -> str:
-    # Generate a salt
-    salt = bcrypt.gensalt()
     # Hash the password with the salt
-    hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
-    return hashed_password.decode("utf-8")
+    hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    return hashed_password.decode()
 
 
 def verify_password(hashed_password: str, provided_password: str) -> bool:
     # Verify the provided password against the hashed password
-    return bcrypt.checkpw(provided_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    return bcrypt.checkpw(provided_password.encode(), hashed_password.encode())
 
 
 def center_window(root: customtkinter.CTk, width: int, height: int):
@@ -96,41 +94,32 @@ def update_config(data):
         json.dump(data, f, indent=2)
 
 
-def generate_key() -> str:
-    """Generates cipher key"""
-    return Fernet.generate_key().decode()
+def get_key(password: str, salt: bytes) -> bytes:
+    """Derive a key from the password."""
+    key = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, 100000)
+    return key
 
 
-# Function to encrypt a string
-def encrypt(data: str, key: str) -> str:
-    """Encrypts data."""
-    cipher_suite = Fernet(key)
-    encoded_data = data.encode("utf-8")
-    encrypted_data = cipher_suite.encrypt(encoded_data)
-    return encrypted_data.decode("utf-8")
+def encrypt_data(data: str, key_salt: tuple[bytes, bytes]) -> bytes:
+    """Encrypt the provided string data using the provided password."""
+    key, salt = key_salt
+    cipher = AES.new(key, AES.MODE_GCM)
+    ciphertext, tag = cipher.encrypt_and_digest(data.encode())
+
+    # Combine salt, nonce, tag, and ciphertext, then encode with base64
+    encrypted_data = salt + cipher.nonce + tag + ciphertext
+    return encrypted_data
 
 
-# Function to decrypt a string
-def decrypt(encrypted_data: str, key: str) -> str:
-    """Decrypts data."""
-    cipher_suite = Fernet(key)
-    decoded_encrypted_data = encrypted_data.encode("utf-8")
-    decrypted_data = cipher_suite.decrypt(decoded_encrypted_data)
+def decrypt_data(encrypted_data: bytes, key: bytes) -> str:
+    """Decrypt the provided string data using the provided key."""
+    nonce = encrypted_data[16:32]
+    tag = encrypted_data[32:48]
+    ciphertext = encrypted_data[48:]
+
+    cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
+    decrypted_data = cipher.decrypt_and_verify(ciphertext, tag)
     return decrypted_data.decode("utf-8")
-
-
-# Function to write a new key-value pair to the .env file
-def add_env_key(key: str, value: str):
-    # Read the existing .env file
-    env_file_path = resource_path(".env")
-    env_values = dotenv_values(env_file_path)
-
-    # Check if the key already exists
-    if key not in env_values:
-        with open(env_file_path, "a") as env_file:
-            env_file.write(f"\n{key}={value}")
-
-        load_dotenv(override=True)
 
 
 def generate_password() -> str:

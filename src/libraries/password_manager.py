@@ -1,20 +1,21 @@
-import importlib
-from tkinter import filedialog
-from typing import Dict
 import customtkinter
 import pystray
+import gc
+from tkinter import filedialog
+from typing import Dict
 from PIL import Image
 from src.utils import window
 from src.libraries.database import Database as Db
-from src.utils.helpers import center_window, generate_key, load_config, add_env_key, SECOND, MINUTE, resource_path
+from src.utils.helpers import center_window, SECOND, MINUTE, resource_path
 from src import style
-import gc
 
 
 class PasswordManager(customtkinter.CTk):
-    config: dict
+    DB_PATH: str = "data\\password_manager.db"
+    HEIGHT: int = 700
+    WIDTH: int = 1000
 
-    lock_timers = {
+    LOCK_TIMERS: Dict[str, int] = {
         "15 sec": 15 * SECOND,
         "30 sec": 30 * SECOND,
         "45 sec": 45 * SECOND,
@@ -26,7 +27,7 @@ class PasswordManager(customtkinter.CTk):
         "Never": -1
     }
 
-    theme_colors: Dict[str, style.ColorSubset] = {
+    THEME_COLORS: Dict[str, style.ColorSubset] = {
         style.PURPLE: style.ColorSubset("#6f42c1", "#E2D9F3"),
         style.TURQUOISE: style.ColorSubset("#20c997", "#D2F4EA"),
         style.BLUE: style.ColorSubset("#0d6efd", "#CFE2FF"),
@@ -38,40 +39,42 @@ class PasswordManager(customtkinter.CTk):
         style.GREEN: style.ColorSubset("#198754", "#D1E7DD"),
         style.CYAN: style.ColorSubset("#0DCAF0", "#CFF4FC"),
     }
+
     current_theme_color: str = style.TURQUOISE
 
     colors: style.Colors = style.Colors(
-        primary=theme_colors[current_theme_color].primary,
-        secondary=theme_colors[current_theme_color].secondary
+        primary=THEME_COLORS[current_theme_color].primary,
+        secondary=THEME_COLORS[current_theme_color].secondary
     )
 
-    color_modes: Dict[str, style.ColorSubset] = {
+    COLOR_MODES: Dict[str, style.ColorSubset] = {
         style.DARK: style.ColorSubset(colors.dark, colors.light),
         style.LIGHT: style.ColorSubset(colors.light, colors.dark)
     }
-    current_color_mode = style.LIGHT
-    color_mode = color_modes[current_color_mode]
+
+    current_color_mode: str = style.LIGHT
+    color_mode: style.ColorSubset = COLOR_MODES[current_color_mode]
 
     images: style.Images = style.Images(current_theme_color, current_color_mode)
 
     def __init__(self):
         super().__init__()
-        self.mode: str = "system"
-        self.height: int = 700
-        self.width: int = 1000
         self.is_resizable: bool = False
-        self.current_window = None
-        self.windows = {}
-
+        self.current_window: str | None = None
+        self.windows: dict = {}
         self.__setup()
+
+    def __setup(self):
+        Db.create_connection(resource_path(self.DB_PATH))
+        self.load_windows(window.LOG_IN, window.SIGN_UP)
         self.iconbitmap(resource_path("icon.ico"))
         self.title("Password Manager")
         self.protocol("WM_DELETE_WINDOW", self.__on_closing)
         self.bind("<Unmap>", self.__on_minimize)
         self.resizable(self.is_resizable, self.is_resizable)
         self.configure(fg_color=self.colors.light)
-        customtkinter.set_appearance_mode(self.mode)
-        center_window(self, self.width, self.height)
+        customtkinter.set_appearance_mode("system")
+        center_window(self, self.WIDTH, self.HEIGHT)
 
     def run(self):
         self.show(window.LOG_IN)
@@ -133,12 +136,12 @@ class PasswordManager(customtkinter.CTk):
 
     def update_theme(self, theme):
         self.current_theme_color = theme
-        self.colors.update(self.theme_colors[theme])
+        self.colors.update(self.THEME_COLORS[theme])
         self.images.update(theme)
 
     def update_mode(self, mode):
         self.current_color_mode = mode
-        self.color_mode = self.color_modes[mode]
+        self.color_mode = self.COLOR_MODES[mode]
         self.images.update(color_mode=mode)
 
     @staticmethod
@@ -154,12 +157,6 @@ class PasswordManager(customtkinter.CTk):
             title="Save PDF File"
         )
         return file_path or None
-
-    def __setup(self):
-        add_env_key("CIPHER_KEY", generate_key())
-        self.config = load_config()
-        Db.create_connection(resource_path(self.config["database"]["path"]))
-        self.load_windows(window.LOG_IN, window.SIGN_UP)
 
     def __on_closing(self):
         Db.close_connection()

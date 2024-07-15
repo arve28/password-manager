@@ -1,6 +1,5 @@
-import os
 import customtkinter
-from src.utils.helpers import adjust_brightness, get_key_by_value, decrypt, verify_password, hash_password, encrypt
+from src.utils.helpers import adjust_brightness, get_key_by_value, verify_password, hash_password
 from src.libraries.auth import Auth
 from src.frames.frame_base import FrameBase
 from src.models.models import User
@@ -19,9 +18,9 @@ class Settings(FrameBase):
         # Side image
         self.img_canvas = customtkinter.CTkLabel(
             self,
-            height=self.root.height,
+            height=self.root.HEIGHT,
             text="",
-            width=self.root.width,
+            width=self.root.WIDTH,
             image=customtkinter.CTkImage(
                 light_image=self.root.images.user_settings,
                 size=(500, 500)),
@@ -51,7 +50,7 @@ class Settings(FrameBase):
             self,
             corner_radius=30,
             width=550,
-            height=self.root.height,
+            height=self.root.HEIGHT,
             fg_color=self.root.color_mode.primary,
             bg_color=self.root.colors.secondary
         )
@@ -110,7 +109,7 @@ class Settings(FrameBase):
             height=35,
             font=self.root.helvetica(14),
             dropdown_font=self.root.helvetica(14),
-            values=list(self.root.theme_colors.keys()),
+            values=list(self.root.THEME_COLORS.keys()),
             fg_color=self.root.colors.secondary,
             button_color=self.root.colors.primary,
             text_color=self.root.colors.dark,
@@ -177,7 +176,7 @@ class Settings(FrameBase):
             width=130,
             font=self.root.helvetica(14),
             dropdown_font=self.root.helvetica(14),
-            values=list(self.root.lock_timers.keys()),
+            values=list(self.root.LOCK_TIMERS.keys()),
             fg_color=self.root.colors.secondary,
             button_color=self.root.colors.primary,
             text_color=self.root.colors.dark,
@@ -188,7 +187,7 @@ class Settings(FrameBase):
             dropdown_hover_color=self.root.colors.primary
         )
         self.lock_timer_option_menu.set(
-            get_key_by_value(self.root.lock_timers, Auth.user.lock_timer)
+            get_key_by_value(self.root.LOCK_TIMERS, Auth.user.lock_timer)
         )
         self.lock_timer_option_menu.place(x=320, y=140)
 
@@ -323,35 +322,6 @@ class Settings(FrameBase):
             lambda event: self.toggle_password_visibility(self.current_password_input)
         )
 
-        # Passcode input label
-        self.passcode_label = customtkinter.CTkLabel(
-            self.form_frame,
-            text="🞺🞺 Passcode:",
-            font=self.root.helvetica(17),
-            text_color=self.root.colors.primary,
-            compound="left",
-            anchor="w",
-            width=350
-        )
-        self.passcode_label.place(x=50, y=470)
-
-        # Passcode input
-        self.passcode_input = customtkinter.CTkEntry(
-            self.form_frame,
-            show="‧",
-            width=350,
-            height=40,
-            border_color=self.root.colors.primary,
-            fg_color=self.root.color_mode.primary,
-            text_color=self.root.color_mode.secondary,
-            font=self.root.helvetica(17)
-        )
-        self.passcode_input.place(x=50, y=500)
-        self.passcode_input.bind(
-            "<Double-3>",
-            lambda event: self.toggle_password_visibility(self.passcode_input)
-        )
-
         # Save button
         self.save_btn = customtkinter.CTkButton(
             self.form_frame,
@@ -379,7 +349,7 @@ class Settings(FrameBase):
         self.clear_entries(self.email_input)
         self.email_input.insert(0, Auth.user.email)
         self.lock_timer_option_menu.set(
-            get_key_by_value(self.root.lock_timers, Auth.user.lock_timer)
+            get_key_by_value(self.root.LOCK_TIMERS, Auth.user.lock_timer)
         )
         self.root.show(window.HOME)
 
@@ -447,11 +417,6 @@ class Settings(FrameBase):
         )
 
         self.current_password_input.configure(
-            fg_color=self.root.color_mode.primary,
-            text_color=self.root.color_mode.secondary
-        )
-
-        self.passcode_input.configure(
             fg_color=self.root.color_mode.primary,
             text_color=self.root.color_mode.secondary
         )
@@ -553,14 +518,6 @@ class Settings(FrameBase):
             border_color=self.root.colors.primary
         )
 
-        self.passcode_label.configure(
-            text_color=self.root.colors.primary
-        )
-
-        self.passcode_input.configure(
-            border_color=self.root.colors.primary
-        )
-
         self.save_btn.configure(
             fg_color=self.root.colors.primary,
             hover_color=adjust_brightness(
@@ -571,19 +528,17 @@ class Settings(FrameBase):
         new_password = self.new_password_input.get()
         email = self.email_input.get()
         current_password = self.current_password_input.get()
-        passcode = self.passcode_input.get()
         results = self.validate({
             "current_password": InputField(current_password, "required"),
             "email": InputField(email, "required" if email == Auth.user.email else "required|unique:User"),
             "new_password": InputField(new_password, "min:8"),
             "new_password_confirmation": InputField(
                 self.confirm_new_password_input.get(),
-                f"match:{new_password}"),
-            "passcode": InputField(passcode, "numeric|min:4")
+                f"match:{new_password}")
         })
 
         if not results.errors:
-            if verify_password(decrypt(Auth.user.password, os.getenv("CIPHER_KEY")), current_password):
+            if verify_password(Auth.user.password, current_password):
                 cleaned_data = self.__prepare_data(results.passed)
 
                 if cleaned_data:
@@ -598,13 +553,12 @@ class Settings(FrameBase):
             self.root.flash_message(next(iter(results.errors.values())), "danger")
 
     def __prepare_data(self, data):
-        new_password = encrypt(hash_password(data["new_password"]), os.getenv("CIPHER_KEY"))\
-            if data["new_password"] else None
-        lock_timer = self.root.lock_timers[self.lock_timer_option_menu.get()]
+        new_password = hash_password(data["new_password"]) if data["new_password"] else None
+
+        lock_timer = self.root.LOCK_TIMERS[self.lock_timer_option_menu.get()]
         data_to_update = {
             "email": data["email"] if data["email"] != Auth.user.email else None,
             "password": new_password,
-            "passcode": encrypt(data["passcode"], os.getenv("CIPHER_KEY")) if data["passcode"] else None,
             "lock_timer": lock_timer if lock_timer != Auth.user.lock_timer else None
         }
         return {field: value for field, value in data_to_update.items() if value is not None}

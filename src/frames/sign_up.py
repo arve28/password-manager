@@ -1,4 +1,5 @@
 import os
+import pyperclip
 import customtkinter
 from src.utils import helpers
 from src import style
@@ -20,12 +21,12 @@ class SignUp(FrameBase):
         self.img_canvas = customtkinter.CTkLabel(
             self,
             text="",
-            height=self.root.height,
-            width=self.root.width,
+            height=self.root.HEIGHT,
+            width=self.root.WIDTH,
             image=customtkinter.CTkImage(
                 light_image=self.root.images.sign_up,
                 size=(500, 500)),
-            fg_color=self.root.theme_colors[style.TURQUOISE].secondary,
+            fg_color=self.root.THEME_COLORS[style.TURQUOISE].secondary,
             anchor="w"
         )
         self.img_canvas.place(x=0, y=0)
@@ -36,7 +37,7 @@ class SignUp(FrameBase):
             width=450,
             height=600,
             fg_color=self.root.colors.light,
-            bg_color=self.root.theme_colors[style.TURQUOISE].secondary
+            bg_color=self.root.THEME_COLORS[style.TURQUOISE].secondary
         )
         self.form_frame.place(x=500, y=50)
 
@@ -45,7 +46,7 @@ class SignUp(FrameBase):
             self.form_frame,
             text="Welcome!",
             font=self.root.helvetica(35),
-            text_color=self.root.theme_colors[style.TURQUOISE].primary,
+            text_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             anchor="w",
             width=350
         )
@@ -69,7 +70,7 @@ class SignUp(FrameBase):
                 light_image=self.root.images.load_icon(f"envelope_{style.TURQUOISE}")),
             text="  Email:",
             font=self.root.helvetica(17),
-            text_color=self.root.theme_colors[style.TURQUOISE].primary,
+            text_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             compound="left",
             anchor="w",
             width=350
@@ -81,7 +82,7 @@ class SignUp(FrameBase):
             self.form_frame,
             width=350,
             height=40,
-            border_color=self.root.theme_colors[style.TURQUOISE].primary,
+            border_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             fg_color=self.root.colors.light,
             text_color=self.root.colors.dark,
             font=self.root.helvetica(15)
@@ -96,7 +97,7 @@ class SignUp(FrameBase):
             image=self.lock_image,
             text="  Password:",
             font=self.root.helvetica(17),
-            text_color=self.root.theme_colors[style.TURQUOISE].primary,
+            text_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             compound="left",
             anchor="w",
             width=350
@@ -109,7 +110,7 @@ class SignUp(FrameBase):
             show="‧",
             width=350,
             height=40,
-            border_color=self.root.theme_colors[style.TURQUOISE].primary,
+            border_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             fg_color=self.root.colors.light,
             text_color=self.root.colors.dark,
             font=self.root.helvetica(17)
@@ -126,7 +127,7 @@ class SignUp(FrameBase):
             image=self.lock_image,
             text="  Confirm password:",
             font=self.root.helvetica(17),
-            text_color=self.root.theme_colors[style.TURQUOISE].primary,
+            text_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             compound="left",
             anchor="w",
             width=350
@@ -139,7 +140,7 @@ class SignUp(FrameBase):
             show="‧",
             width=350,
             height=40,
-            border_color=self.root.theme_colors[style.TURQUOISE].primary,
+            border_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             fg_color=self.root.colors.light,
             text_color=self.root.colors.dark,
             font=self.root.helvetica(17)
@@ -156,9 +157,9 @@ class SignUp(FrameBase):
             text="Submit",
             text_color=self.root.colors.light,
             font=self.root.helvetica(15),
-            fg_color=self.root.theme_colors[style.TURQUOISE].primary,
+            fg_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             hover_color=helpers.adjust_brightness(
-                self.root.theme_colors[style.TURQUOISE].primary),
+                self.root.THEME_COLORS[style.TURQUOISE].primary),
             width=350,
             height=40,
             command=self.__submit
@@ -169,11 +170,11 @@ class SignUp(FrameBase):
         self.sign_in_btn = customtkinter.CTkButton(
             self.form_frame,
             text="Sign in",
-            text_color=self.root.theme_colors[style.TURQUOISE].primary,
+            text_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             font=self.root.helvetica(15),
-            fg_color=self.root.theme_colors[style.TURQUOISE].secondary,
+            fg_color=self.root.THEME_COLORS[style.TURQUOISE].secondary,
             hover_color=helpers.adjust_brightness(
-                self.root.theme_colors[style.TURQUOISE].secondary),
+                self.root.THEME_COLORS[style.TURQUOISE].secondary),
             width=350,
             height=40,
             command=lambda: self.root.show(window.LOG_IN)
@@ -188,20 +189,27 @@ class SignUp(FrameBase):
             "password_confirmation": InputField(
                 self.confirm_password_input.get(),
                 f"required|match:{password}"
-            ),
+            )
         })
 
         if not result.errors:
-            hashed_password = helpers.encrypt(
-                helpers.hash_password(result.passed["password"]),
-                os.getenv("CIPHER_KEY")
-            )
+            user = result.passed
+            hashed_password = helpers.hash_password(user["password"])
+            key = helpers.generate_password()
+            hashed_key = helpers.hash_password(key)
             User.create(
-                fields=("email", "password"),
-                values=(result.passed["email"], hashed_password)
+                fields=("email", "password", "key", "salt"),
+                values=(user["email"], hashed_password, hashed_key, os.urandom(16))
             )
-            Auth.log_in(Credentials(email=result.passed["email"], password=password))
+            Auth.log_in(Credentials(email=user["email"], password=password, key=key))
             self.successful_log_in()
             self.root.flash_message("Signed up successfully.", "success")
+            pyperclip.copy(key)
+            self.confirmation_prompt(
+                f"Key (copied to clipboard): {key}\n"
+                f"Store this key somewhere safe.\nIt will not be shown again.\n"
+                f"If you lose it, you'll not be able to access your account!",
+                500, 150
+            )
         else:
             self.root.flash_message(next(iter(result.errors.values())), "danger")

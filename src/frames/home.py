@@ -1,8 +1,7 @@
-import os
-from sqlite3 import Row
-import customtkinter
-from src.utils import helpers
 import pyperclip
+import customtkinter
+from sqlite3 import Row
+from src.utils import helpers
 from src.libraries.auth import Auth
 from src.models.models import Password
 from src.frames.frame_base import FrameBase
@@ -233,6 +232,39 @@ class Home(FrameBase):
         )
         self.passwords_table_frame.place(x=400, y=85)
 
+        # Account column label
+        self.col_account_label = customtkinter.CTkLabel(
+            self.passwords_table_frame,
+            text="Web\\App",
+            width=240,
+            text_color=self.root.colors.primary,
+            font=self.root.helvetica(15),
+            fg_color="transparent"
+        )
+        self.col_account_label.grid(row=0, column=0, padx=5, pady=8)
+
+        # Password column label
+        self.col_password_label = customtkinter.CTkLabel(
+            self.passwords_table_frame,
+            text="Password",
+            width=60,
+            text_color=self.root.colors.primary,
+            font=self.root.helvetica(15),
+            fg_color="transparent"
+        )
+        self.col_password_label.grid(row=0, column=1, padx=5, pady=8)
+
+        # Username column label
+        self.col_username_label = customtkinter.CTkLabel(
+            self.passwords_table_frame,
+            text="Username",
+            width=220,
+            text_color=self.root.colors.primary,
+            font=self.root.helvetica(15),
+            fg_color="transparent"
+        )
+        self.col_username_label.grid(row=0, column=2, padx=5, pady=8)
+
         # Pdf button
         self.pdf_btn = customtkinter.CTkButton(
             self,
@@ -301,7 +333,7 @@ class Home(FrameBase):
             self.passwords.destroy_search_table()
             self.passwords.search = Password.search(
                 item=search_param,
-                search_in=["account", "username"],
+                search_in=["account"],
                 additional_condition="user_id = :user_id",
                 named_params={"user_id": 1}
             )
@@ -309,38 +341,17 @@ class Home(FrameBase):
         else:
             self.__render_content()
 
-    def __show_attempts_message(self):
-        if Auth.user.attempts > 0:
-            msg = (
-                f"Wrong password or passcode. "
-                f"{Auth.user.attempts} attempt{"s" if Auth.user.attempts > 1 else ""} left."
-            )
-            level = "warning"
-        else:
-            msg = "Wrong password or passcode. Password required."
-            level = "danger"
-
-        self.root.flash_message(msg, level)
-
     def __auto_lock(self):
-        if Auth.user.lock_timer != -1:
+        if Auth.user.lock_timer != self.root.LOCK_TIMERS["Never"]:
             self.root.after(Auth.user.lock_timer, self.__lock_passwords_table)
 
     def __unlock_passwords_table(self):
         def unlock():
-            Auth.user.reset_attempts()
             self.pass_input.delete(0, customtkinter.END)
             self.__toggle_passwords_table()
             self.search_input.configure(state=customtkinter.NORMAL)
             self.root.flash_message("Passwords unlocked.", "success")
             self.__auto_lock()
-
-        def check_both():
-            if passcode == user_input or helpers.verify_password(password, user_input):
-                unlock()
-            else:
-                Auth.user.decrease_attempts()
-                self.__show_attempts_message()
 
         def check_password():
             if helpers.verify_password(password, user_input):
@@ -349,19 +360,14 @@ class Home(FrameBase):
                 self.root.flash_message("Wrong password", "danger")
 
         result = self.validate({
-            "password_or_passcode": InputField(self.pass_input.get(), "required")
+            "password": InputField(self.pass_input.get(), "required")
         })
 
         if not result.errors:
-            passcode = helpers.decrypt(Auth.user.passcode, os.getenv("CIPHER_KEY")) if Auth.user.passcode else None
-            password = helpers.decrypt(Auth.user.password, os.getenv("CIPHER_KEY"))
-            user_input = result.passed["password_or_passcode"]
+            password = Auth.user.password
+            user_input = result.passed["password"]
             self.pass_input.configure(border_color=self.root.colors.primary)
-
-            if passcode and Auth.user.attempts > 0:
-                check_both()
-            else:
-                check_password()
+            check_password()
         else:
             self.pass_input.configure(border_color=self.root.colors.danger.border)
             self.root.flash_message(next(iter(result.errors.values())), "danger")
@@ -390,7 +396,7 @@ class Home(FrameBase):
         })
 
         if not result.errors:
-            user_password = helpers.decrypt(Auth.user.password, os.getenv("CIPHER_KEY"))
+            user_password = Auth.user.password
 
             if helpers.verify_password(user_password, result.passed["password"]):
                 self.pass_input.configure(border_color=self.root.colors.primary)
@@ -419,7 +425,7 @@ class Home(FrameBase):
     def __get_user_passwords() -> list:
         return Password.find_by(
             "user_id = ?",
-            [1, ],
+            [Auth.user.id, ],
             order_by="id",
             order="DESC"
         ) or []
@@ -428,8 +434,8 @@ class Home(FrameBase):
         self.__clear_form()
         self.passwords.selected_id = entry["id"]
         self.web_app_name_input.insert(0, entry["account"])
-        self.username_input.insert(0, entry["username"])
-        self.password_input.insert(0, helpers.decrypt(entry["password"], os.getenv("CIPHER_KEY")))
+        self.username_input.insert(0, helpers.decrypt_data(entry["username"], Auth.user.key))
+        self.password_input.insert(0, helpers.decrypt_data(entry["password"], Auth.user.key))
 
         if not self.edit_mode:
             self.__toggle_add_btn(self.add_btn)
@@ -453,6 +459,7 @@ class Home(FrameBase):
         self.edit_mode = False
 
     def __update_passwords_table(self):
+        self.clear_entries(self.search_input)
         self.__render_content()
         self.__cancel_form_edit()
 
@@ -464,10 +471,12 @@ class Home(FrameBase):
         })
 
         if not result.errors:
-            password = helpers.encrypt(result.passed["password"], os.getenv("CIPHER_KEY"))
+            entry = result.passed
+            username = helpers.encrypt_data(entry["username"], (Auth.user.key, Auth.user.salt))
+            password = helpers.encrypt_data(entry["password"], (Auth.user.key, Auth.user.salt))
             Password.create(
                 ("user_id", "account", "username", "password"),
-                (1, result.passed["web/app"], result.passed["username"], password)
+                (Auth.user.id, entry["web/app"], username, password)
             )
             self.passwords.add(Password.find_latest())
             self.__update_passwords_table()
@@ -489,14 +498,14 @@ class Home(FrameBase):
         })
 
         if not result.errors:
-            if self.confirmation_prompt("Save the changes?"):
-                password = helpers.encrypt(result.passed["password"], os.getenv("CIPHER_KEY"))
+            entry = result.passed
+            if self.confirmation_prompt("Save changes?", 300, 100):
                 Password.update(
                     self.passwords.selected_id,
                     {
-                        "account": result.passed["web/app"],
-                        "username": result.passed["username"],
-                        "password": password
+                        "account": entry["web/app"],
+                        "username": helpers.encrypt_data(entry["username"], (Auth.user.key, Auth.user.salt)),
+                        "password": helpers.encrypt_data(entry["password"], (Auth.user.key, Auth.user.salt))
                     }
                 )
                 self.passwords.update(Password.find_by_id(self.passwords.selected_id))
@@ -506,7 +515,7 @@ class Home(FrameBase):
             self.root.flash_message(next(iter(result.errors.values())), "danger")
 
     def __delete_password(self):
-        if self.confirmation_prompt("Delete the entry?"):
+        if self.confirmation_prompt("Delete entry?", 300, 100):
             Password.delete(self.passwords.selected_id)
             self.passwords.delete(self.passwords.selected_id)
             self.__update_passwords_table()
@@ -522,20 +531,23 @@ class Home(FrameBase):
                 pyperclip.copy("")
 
         pyperclip.copy(text)
-        self.root.flash_message("Copied to clipboard\nClipboard clears in 15 seconds", "success")
-        self.root.after(15000, clear_clipboard)
+        self.root.flash_message("Copied to clipboard\nClipboard clears in 30 seconds", "success")
+        self.root.after(self.root.LOCK_TIMERS["30 sec"], clear_clipboard)
 
     def __generate_pdf(self, password: str):
-        data = []
-
-        for i, entry in enumerate(self.passwords.user):
-            data.append(list(entry[2:]))
-            data[i][2] = helpers.decrypt(data[i][2], os.getenv("CIPHER_KEY"))
-
-        data.insert(0, ["Web/App", "Username", "Password"])
         path = self.root.save_file_dialog()
 
         if path:
+            data_content = []
+
+            for i, entry in enumerate(self.passwords.user):
+                data_content.append(list(entry[2:]))
+                data_content[i][1] = helpers.decrypt_data(data_content[i][1], Auth.user.key)
+                data_content[i][2] = helpers.decrypt_data(data_content[i][2], Auth.user.key)
+
+            data = data_content.copy()
+            data.insert(0, ["Web/App", "Username", "Password"])
+
             helpers.generate_pdf(
                 path, data, "arvydas.bloze28@gmail.com", password
             )
@@ -557,13 +569,13 @@ class Home(FrameBase):
 class Passwords:
     def __init__(self, master: Home, user_passwords: list):
         self.master: Home = master
+        self.is_locked: bool = False
+        self.is_hidden: bool = False
         self.user: list[Row] = user_passwords
         self.__search: list[Row] = []
         self.table: list[dict[str, customtkinter.CTkButton]] = self.__create_rows(self.user)
         self.search_table: list[dict[str, customtkinter.CTkButton]] = []
         self.selected_id = None
-        self.is_locked: bool = False
-        self.is_hidden: bool = False
 
     @property
     def search(self):
@@ -596,6 +608,7 @@ class Passwords:
 
     @staticmethod
     def show_row(index, row):
+        index += 1
         row["account_btn"].grid(row=index, column=0, padx=5, pady=8)
         row["account_btn"].grid_propagate(False)
         row["password_btn"].grid(row=index, column=1, padx=5, pady=8)
@@ -629,18 +642,21 @@ class Passwords:
         return rows
 
     def __create_row(self, entry):
+        image = self.master.key_icon_disabled if self.is_locked else self.master.key_icon
+        state = customtkinter.DISABLED if self.is_locked else customtkinter.NORMAL
+        username = helpers.decrypt_data(entry["username"], Auth.user.key)
         return {
             "account_btn": customtkinter.CTkButton(
                 self.master.passwords_table_frame,
                 height=40,
-                width=220,
+                width=240,
                 font=self.master.root.helvetica(14),
                 fg_color=self.master.root.colors.secondary,
                 text_color=self.master.root.colors.primary,
                 hover_color=helpers.adjust_brightness(self.master.root.colors.secondary),
                 text=entry["account"],
                 command=lambda e=entry: self.master.transfer_to_form(e),
-                state=customtkinter.NORMAL
+                state=state
             ),
             "password_btn": customtkinter.CTkButton(
                 self.master.passwords_table_frame,
@@ -650,23 +666,23 @@ class Passwords:
                 fg_color=self.master.root.colors.secondary,
                 text_color=self.master.root.colors.primary,
                 hover_color=helpers.adjust_brightness(self.master.root.colors.secondary),
-                image=self.master.key_icon,
+                image=image,
                 text="",
                 command=lambda e=entry: self.master.copy_to_clipboard(
-                    helpers.decrypt(e["password"], os.getenv("CIPHER_KEY"))),
-                state=customtkinter.NORMAL
+                    helpers.decrypt_data(e["password"], Auth.user.key)),
+                state=state
             ),
             "username_btn": customtkinter.CTkButton(
                 self.master.passwords_table_frame,
                 height=40,
-                width=240,
+                width=220,
                 font=self.master.root.helvetica(14),
                 fg_color=self.master.root.colors.secondary,
                 text_color=self.master.root.colors.primary,
                 hover_color=helpers.adjust_brightness(self.master.root.colors.secondary),
-                text=entry["username"],
-                command=lambda e=entry: self.master.copy_to_clipboard(e["username"]),
-                state=customtkinter.NORMAL
+                text=username,
+                command=lambda e=entry: self.master.copy_to_clipboard(username),
+                state=state
             )
         }
 
@@ -677,15 +693,21 @@ class Passwords:
     def update(self, entry):
         index = self.__find_by_id(entry["id"])
         self.user[index] = entry
-        print(self.user[index]["account"])
+        self.__destroy_row(self.table, index)
         self.table[index] = self.__create_row(entry)
 
     def delete(self, __id):
         index = self.__find_by_id(__id)
         del self.user[index]
+        self.__destroy_row(self.table, index)
         del self.table[index]
 
     def __find_by_id(self, __id):
         for index, entry in enumerate(self.user):
             if entry["id"] == __id:
                 return index
+
+    @staticmethod
+    def __destroy_row(table: list, index: int):
+        for column in table[index].values():
+            column.destroy()

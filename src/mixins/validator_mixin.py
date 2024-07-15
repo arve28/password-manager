@@ -1,7 +1,7 @@
+import re
 from typing import Dict, Optional
 from src.libraries.model import Model
 from src.models import models
-import re
 from dataclasses import dataclass
 
 
@@ -35,7 +35,8 @@ class InputField:
         for validation in validations:
             if ":" in validation:
                 key, val = validation.split(":")
-                val = int(val) if val.isdigit() else val
+                # TODO: fix bug in _match method 'and key != "match"'
+                val = int(val) if val.isdigit() and key != "match" else val
                 processed_validations.append((key, val))
             else:
                 processed_validations.append(validation)

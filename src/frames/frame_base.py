@@ -2,7 +2,6 @@ import customtkinter
 from src.utils import window
 from src.libraries.auth import Auth
 from src.mixins.validator_mixin import ValidatorMixin
-from src.dialogs.confirmation_prompt import ConfirmationPrompt
 from src.libraries.password_manager import PasswordManager
 
 
@@ -11,8 +10,8 @@ class FrameBase(customtkinter.CTkFrame, ValidatorMixin):
         super().__init__(master, **kwargs)
         self.configure(
             fg_color=master.color_mode.primary,
-            width=master.width,
-            height=master.height,
+            width=master.WIDTH,
+            height=master.HEIGHT,
             corner_radius=0
         )
         self.root = master
@@ -51,8 +50,10 @@ class FrameBase(customtkinter.CTkFrame, ValidatorMixin):
                     fg_color=self.root.colors.disabled
                 )
 
-    def confirmation_prompt(self, message) -> bool:
-        prompt = ConfirmationPrompt(self.root, message)
+    def confirmation_prompt(self, message, width: int, height: int) -> bool:
+        from src.dialogs.confirmation_prompt import ConfirmationPrompt
+
+        prompt = ConfirmationPrompt(self.root, message, width, height)
         self.root.wait_window(prompt)
         return prompt.result
 
