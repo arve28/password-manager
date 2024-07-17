@@ -9,10 +9,12 @@ from src.models import tables
 
 
 class Database(QueryBuilderMixin):
+    """Sqlite database management class."""
     conn: Optional[sqlite3.Connection] = None
 
     @classmethod
     def create_connection(cls, db_host: str):
+        """Creates connection to the database."""
         try:
             cls.conn = sqlite3.connect(db_host)
             cls.conn.create_function("REGEXP", 2, regexp)
@@ -22,6 +24,7 @@ class Database(QueryBuilderMixin):
 
     @classmethod
     def close_connection(cls):
+        """Closes connection to the database."""
         if cls.conn:
             cls.conn.close()
         else:
@@ -29,6 +32,7 @@ class Database(QueryBuilderMixin):
 
     @classmethod
     def create_tables(cls):
+        """Creates tables defined in src.models.tables."""
         classes_info = cls.__get_tables_info()
 
         for subject in classes_info:
@@ -37,7 +41,7 @@ class Database(QueryBuilderMixin):
 
     @classmethod
     def run(cls) -> int:
-        """Executes query and returns number of affected rows"""
+        """Executes query and returns number of affected rows."""
         cursor = cls.conn.cursor()
         query = cls.build()
 
@@ -56,6 +60,7 @@ class Database(QueryBuilderMixin):
 
     @classmethod
     def get(cls) -> list[Row]:
+        """Executes query and returns list of Row objects."""
         cursor = cls.conn.cursor()
         query = cls.build()
 
@@ -71,6 +76,7 @@ class Database(QueryBuilderMixin):
 
     @classmethod
     def get_one(cls) -> Row:
+        """Executes query and returns Row object."""
         cursor = cls.conn.cursor()
         query = cls.build()
 
@@ -86,6 +92,7 @@ class Database(QueryBuilderMixin):
 
     @staticmethod
     def __get_tables_info() -> list:
+        """Gets information about the classes defined in src.models.tables."""
         classes_info = []
 
         for name, obj in inspect.getmembers(tables, inspect.isclass):

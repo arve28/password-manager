@@ -1,5 +1,5 @@
+"""Helper functions and constants."""
 import hashlib
-import json
 import random
 import re
 import sys
@@ -29,7 +29,12 @@ def resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 
-def get_key_by_value(dictionary, target_value):
+def get_key_by_value(dictionary: dict, target_value):
+    """
+    Gets dictionary key by value.
+    :param dictionary: Dictionary to search in.
+    :param target_value: Value to match
+    """
     for key, value in dictionary.items():
         if value == target_value:
             return key
@@ -37,22 +42,29 @@ def get_key_by_value(dictionary, target_value):
 
 
 def regexp(expr, item):
+    """Defines REGEXP function that could be used in sqlite query."""
     reg = re.compile(expr)
     return reg.search(item) is not None
 
 
 def hash_password(password: str) -> str:
-    # Hash the password with the salt
+    """Hash the password with the salt"""
     hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     return hashed_password.decode()
 
 
 def verify_password(hashed_password: str, provided_password: str) -> bool:
-    # Verify the provided password against the hashed password
+    """Verify the provided password against the hashed password"""
     return bcrypt.checkpw(provided_password.encode(), hashed_password.encode())
 
 
 def center_window(root: customtkinter.CTk, width: int, height: int):
+    """
+    Centers :class:`customtkinter.CTk` application's window on the screen.
+    :param root: :class:`customtkinter.CTk` object.
+    :param width: Width of :class:`customtkinter.CTk` window.
+    :param height: Height of :class:`customtkinter.CTk` window.
+    """
     # Get the screen width and height
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
@@ -65,7 +77,12 @@ def center_window(root: customtkinter.CTk, width: int, height: int):
     root.geometry(f"{width}x{height}+{x}+{y}")
 
 
-def adjust_brightness(hex_color, factor=.9) -> str:
+def adjust_brightness(hex_color: str, factor: float | int = .9) -> str:
+    """
+    Adjust brightness of a color.
+    :param hex_color: Hex color code.
+    :param factor: Brightness level: 1 - highest brightness, 0 - lowest brightness.
+    """
     # Convert hex to RGB
     hex_color = hex_color.lstrip("#")
     r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
@@ -82,16 +99,6 @@ def adjust_brightness(hex_color, factor=.9) -> str:
 
     # Convert RGB back to hex
     return f"#{r:02x}{g:02x}{b:02x}"
-
-
-def load_config():
-    with open(resource_path("config\\config.json"), "r") as f:
-        return json.load(f)
-
-
-def update_config(data):
-    with open(resource_path("config\\config.json"), "w") as f:
-        json.dump(data, f, indent=2)
 
 
 def get_key(password: str, salt: bytes) -> bytes:
@@ -123,6 +130,7 @@ def decrypt_data(encrypted_data: bytes, key: bytes) -> str:
 
 
 def generate_password() -> str:
+    """Generates password(18-24 characters)."""
     letters = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',
                'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
                'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z')
@@ -142,9 +150,16 @@ def generate_password() -> str:
     return password
 
 
-def generate_pdf(filename, data, title, user_password):
+def generate_pdf(filename: str, data: list, title: str, password: str):
+    """
+    Generates pdf file with `data` table.
+    :param filename: Name of the file.
+    :param data: Table content.
+    :param title: Title of the table.
+    :param password: Sets a password for the file.
+    """
     # Set up encryption
-    encryption = StandardEncryption(userPassword=user_password, canPrint=1)
+    encryption = StandardEncryption(userPassword=password, canPrint=1)
 
     # Create the document with encryption
     c = canvas.Canvas(filename, pagesize=A4, encrypt=encryption)
@@ -197,16 +212,3 @@ def generate_pdf(filename, data, title, user_password):
 
     # Save the PDF
     c.save()
-
-
-def delete_file(filename):
-    """Delete the specified file."""
-    try:
-        os.remove(filename)
-        print(f"File {filename} has been deleted successfully.")
-    except FileNotFoundError:
-        print(f"File {filename} not found.")
-    except PermissionError:
-        print(f"Permission denied: unable to delete {filename}.")
-    except Exception as e:
-        print(f"An error occurred while trying to delete {filename}: {e}")

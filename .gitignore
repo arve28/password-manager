@@ -27,6 +27,7 @@ share/python-wheels/
 *.manifest
 *.spec
 *.db
+src/utils/decorators.py
 
 # Installer logs
 pip-log.txt

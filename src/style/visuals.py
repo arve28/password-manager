@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from src.utils.helpers import resource_path
-from PIL import Image
+from PIL import Image, ImageFile
 
+# Color name constants
 PURPLE = "purple"
 TURQUOISE = "turquoise"
 BLUE = "blue"
@@ -17,6 +18,7 @@ LIGHT = "light"
 
 
 class Images:
+    """Class for managing images in application."""
     def __init__(self, color_theme: str, color_mode):
         self.__color_theme = color_theme
         self.__color_mode = color_mode
@@ -50,6 +52,11 @@ class Images:
         self.sign_up = self.load_image("sign_up")
 
     def update(self, color_theme=None, color_mode=None):
+        """
+        Reloads different color images.
+        :param color_theme: Name of a color theme.
+        :param color_mode: Name of a display mode.
+        """
         if color_theme and color_theme != self.__color_theme:
             self.__color_theme = color_theme
             self.envelope = self.load_icon(f"envelope_{color_theme}")
@@ -71,21 +78,31 @@ class Images:
             self.unlock = self.load_icon(f"unlock_{color_mode}")
             self.lock_bw = self.load_icon(f"lock_{color_mode}")
 
-    def load_icon(self, icon_name: str) -> Image:
+    def load_icon(self, icon_name: str) -> ImageFile:
+        """
+        Loads image from `self.icons_path` directory.
+        :param icon_name: Name of an image file without extension.
+        """
         return Image.open(resource_path(f"{self.icons_path}{icon_name}.png"))
 
-    def load_image(self, image_name: str) -> Image:
+    def load_image(self, image_name: str) -> ImageFile:
+        """
+        Loads image from `self.images_path` directory.
+        :param image_name: Name of an image file without extension.
+        """
         return Image.open(resource_path(f"{self.images_path}{image_name}.png"))
 
 
 @dataclass
 class ColorSubset:
+    """Color set"""
     primary: str
     secondary: str
 
 
 @dataclass
 class MessageLevelColor:
+    """Color set for message's level."""
     normal: str
     subtle: str
     border: str
@@ -93,6 +110,7 @@ class MessageLevelColor:
 
 @dataclass
 class Colors:
+    """Class for managing colors in application."""
     primary: str
     secondary: str
     disabled = "#788081"
@@ -104,5 +122,9 @@ class Colors:
     success = MessageLevelColor("#16784A", "#D1E7DD", "#A3CFBB")
 
     def update(self, theme_color: ColorSubset):
+        """
+        Updates main colors (primary and secondary).
+        :param theme_color: Theme color name.
+        """
         self.primary = theme_color.primary
         self.secondary = theme_color.secondary

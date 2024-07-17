@@ -15,6 +15,7 @@ class Settings(FrameBase):
         self.__initialize_gui()
 
     def __initialize_gui(self):
+        """Populates window with widgets."""
         # Side image
         self.img_canvas = customtkinter.CTkLabel(
             self,
@@ -338,6 +339,7 @@ class Settings(FrameBase):
         self.save_btn.place(x=50, y=630)
 
     def __switch_theme_color(self, _event):
+        """Updates user's theme color."""
         choice = self.theme_option_menu.get()
         User.update(Auth.user.id, {"theme_color": choice})
         Auth.user.update()
@@ -346,6 +348,7 @@ class Settings(FrameBase):
         self.root.refresh_windows(window.HOME)
 
     def __go_home(self):
+        """Redirects to "Home" window."""
         self.clear_entries(self.email_input)
         self.email_input.insert(0, Auth.user.email)
         self.lock_timer_option_menu.set(
@@ -354,6 +357,7 @@ class Settings(FrameBase):
         self.root.show(window.HOME)
 
     def __switch_mode(self):
+        """Updates user's display mode (dark/light)."""
         choice = self.color_mode_switch.get()
         User.update(Auth.user.id, {"color_mode": choice})
         Auth.user.update()
@@ -362,12 +366,14 @@ class Settings(FrameBase):
         self.root.refresh_windows(window.HOME)
 
     def __log_out(self):
+        """Logs out user."""
         Auth.log_out()
         self.root.load_windows(window.LOG_IN, window.SIGN_UP)
         self.root.destroy_windows(window.HOME, window.SETTINGS)
         self.root.show(window.LOG_IN)
 
     def __refresh_color_mode(self):
+        """Refreshes the display mode of "Settings" window."""
         self.log_out_btn.configure(
             text_color=self.root.color_mode.secondary,
             fg_color=self.root.color_mode.primary,
@@ -426,6 +432,7 @@ class Settings(FrameBase):
         )
 
     def __refresh_theme_color(self):
+        """Refreshes the theme color of "Settings" window."""
         self.img_canvas.configure(
             image=customtkinter.CTkImage(
                 light_image=self.root.images.user_settings,
@@ -525,6 +532,7 @@ class Settings(FrameBase):
         )
 
     def __update_details(self):
+        """Updates user's details."""
         new_password = self.new_password_input.get()
         email = self.email_input.get()
         current_password = self.current_password_input.get()
@@ -553,6 +561,7 @@ class Settings(FrameBase):
             self.root.flash_message(next(iter(results.errors.values())), "danger")
 
     def __prepare_data(self, data):
+        """Prepares details data to be updated."""
         new_password = hash_password(data["new_password"]) if data["new_password"] else None
 
         lock_timer = self.root.LOCK_TIMERS[self.lock_timer_option_menu.get()]

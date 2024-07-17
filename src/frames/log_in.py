@@ -9,11 +9,13 @@ from src import style
 
 
 class LogIn(FrameBase):
+    """"Log in" window."""
     def __init__(self, root: PasswordManager, **kwargs):
         super().__init__(root, **kwargs)
         self.__initialize_gui()
 
     def __initialize_gui(self):
+        """Populates window with widgets."""
         # Side image
         self.img_canvas = customtkinter.CTkLabel(
             self,
@@ -182,6 +184,7 @@ class LogIn(FrameBase):
         self.sign_up_btn.place(x=50, y=520)
 
     def __log_in(self, _event=None):
+        """Logs in user."""
         result = self.validate({
             "email": InputField(self.email_input.get(), "required"),
             "password": InputField(self.password_input.get(), "required"),

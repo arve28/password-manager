@@ -6,6 +6,7 @@ from src.utils import helpers
 
 @dataclass
 class User:
+    """Authenticated user object."""
     id: int
     email: str
     password: str
@@ -16,6 +17,7 @@ class User:
     lock_timer: int
 
     def update(self):
+        """Refreshes user's details."""
         user = UserModel.find_by_id(self.id)
         self.email = user["email"]
         self.password = user["password"]
@@ -26,16 +28,19 @@ class User:
 
 @dataclass
 class Credentials:
+    """Credentials object to be passed to Auth.login_in method."""
     email: str
     password: str
     key: str
 
 
 class Auth:
+    """User's authentication management class."""
     user: Optional[User] = None
 
     @classmethod
     def log_in(cls, credentials: Credentials):
+        """Authenticates user and creates "auth.User" object."""
         user = UserModel.find_by("email = ?", [credentials.email,], limit=1)
 
         if user:
@@ -56,4 +61,5 @@ class Auth:
 
     @classmethod
     def log_out(cls):
+        """Logs out user."""
         cls.user = None

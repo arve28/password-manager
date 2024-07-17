@@ -4,6 +4,7 @@ from src.utils import helpers
 
 
 class ConfirmationPrompt(customtkinter.CTkToplevel):
+    """Top level confirmation prompt."""
     def __init__(self, root: PasswordManager, message: str, width: int, height: int):
         super().__init__(root)
         self.root = root
@@ -44,7 +45,7 @@ class ConfirmationPrompt(customtkinter.CTkToplevel):
             font=self.root.helvetica(17),
             fg_color=self.root.colors.primary,
             hover_color=helpers.adjust_brightness(self.root.colors.primary),
-            command=self.confirm
+            command=self.__confirm
         )
         yes_button.pack(side=customtkinter.LEFT, padx=5)
 
@@ -56,15 +57,15 @@ class ConfirmationPrompt(customtkinter.CTkToplevel):
             font=self.root.helvetica(17),
             fg_color=self.root.colors.primary,
             hover_color=helpers.adjust_brightness(self.root.colors.primary),
-            command=self.cancel
+            command=self.__cancel
         )
         no_button.pack(side=customtkinter.LEFT, padx=5)
         self.attributes("-topmost", True)
 
-    def confirm(self):
+    def __confirm(self):
         self.result = True
         self.destroy()
 
-    def cancel(self):
+    def __cancel(self):
         self.result = False
         self.destroy()

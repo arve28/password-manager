@@ -11,6 +11,7 @@ from src import style
 
 
 class PasswordManager(customtkinter.CTk):
+    """Password manager application's class."""
     DB_PATH: str = "data\\password_manager.db"
     HEIGHT: int = 700
     WIDTH: int = 1000
@@ -65,6 +66,7 @@ class PasswordManager(customtkinter.CTk):
         self.__setup()
 
     def __setup(self):
+        """Setups the application."""
         Db.create_connection(resource_path(self.DB_PATH))
         self.load_windows(window.LOG_IN, window.SIGN_UP)
         self.iconbitmap(resource_path("icon.ico"))
@@ -77,10 +79,16 @@ class PasswordManager(customtkinter.CTk):
         center_window(self, self.WIDTH, self.HEIGHT)
 
     def run(self):
+        """Launch the application."""
         self.show(window.LOG_IN)
         self.mainloop()
 
     def show(self, window_class_name: str):
+        """
+        Displays the window.
+        :param window_class_name: name of the window class
+
+        """
         if self.current_window:
             self.windows[self.current_window].place_forget()
 
@@ -88,6 +96,11 @@ class PasswordManager(customtkinter.CTk):
         self.current_window = window_class_name
 
     def __load_window_class(self, name):
+        """
+        Loads the window class.
+        :param name: name of the window class
+        :return: window object
+        """
         import src.frames
 
         # Get the class from the imported module
@@ -95,6 +108,7 @@ class PasswordManager(customtkinter.CTk):
         return window_class(self)
 
     def refresh_windows(self, *window_class_names):
+        """Reinitialize window objects."""
         for window_name in window_class_names:
             self.windows[window_name].destroy()
             del self.windows[window_name]
@@ -106,11 +120,13 @@ class PasswordManager(customtkinter.CTk):
         gc.collect()
 
     def load_windows(self, *window_class_names):
+        """Creates list of window objects."""
         for window_name in window_class_names:
             if window_name not in self.windows:
                 self.windows[window_name] = self.__load_window_class(window_name)
 
     def destroy_windows(self, *window_class_names):
+        """Destroys window widgets."""
         for window_name in window_class_names:
             self.windows[window_name].destroy()
             del self.windows[window_name]
@@ -121,6 +137,12 @@ class PasswordManager(customtkinter.CTk):
         gc.collect()
 
     def flash_message(self,  message: str, level: str, duration: int = 3):
+        """
+        Shows flash message.
+        :param message: text to show
+        :param level: "danger" - red themed, "success" - green themed or "warning" - yellow themed
+        :param duration: time in seconds
+        """
         color: style.MessageLevelColor = getattr(self.colors, level)
         message_label = customtkinter.CTkLabel(
             self,
@@ -135,21 +157,42 @@ class PasswordManager(customtkinter.CTk):
         self.after(duration*1000, lambda: message_label.destroy())
 
     def update_theme(self, theme):
-        self.current_theme_color = theme
-        self.colors.update(self.THEME_COLORS[theme])
-        self.images.update(theme)
+        """
+        Updates the application's theme color.
+        :param theme: color name from THEME_COLORS
+        """
+        if theme in self.THEME_COLORS:
+            self.current_theme_color = theme
+            self.colors.update(self.THEME_COLORS[theme])
+            self.images.update(theme)
+        else:
+            raise KeyError()
 
     def update_mode(self, mode):
-        self.current_color_mode = mode
-        self.color_mode = self.COLOR_MODES[mode]
-        self.images.update(color_mode=mode)
+        """
+        Updates the application's display mode.
+        :param mode: mode name from COLOR_MODES
+        """
+        if mode in self.COLOR_MODES:
+            self.current_color_mode = mode
+            self.color_mode = self.COLOR_MODES[mode]
+            self.images.update(color_mode=mode)
+        else:
+            raise KeyError()
 
     @staticmethod
     def helvetica(size: int, weight: str = "bold") -> tuple:
+        """
+        Generates tuple with Helvetica font.
+        :param size: font size
+        :param weight: font weight
+        :return: tuple("Helvetica", size, weight)
+        """
         return "Helvetica", size, weight
 
     @staticmethod
     def save_file_dialog():
+        """Shows save file dialog."""
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             initialfile="passwords",
@@ -159,15 +202,18 @@ class PasswordManager(customtkinter.CTk):
         return file_path or None
 
     def __on_closing(self):
+        """Operations before closing the application."""
         Db.close_connection()
         self.destroy()
 
     def __on_minimize(self, _event=None):
+        """Operations on minimize event."""
         if self.state() == 'iconic':
             self.withdraw()
             self.__create_tray_icon()
 
     def __create_tray_icon(self):
+        """Shows application in system tray."""
         # Function to show the window from the tray
         def show_window(icon, _item):
             self.deiconify()

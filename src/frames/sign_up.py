@@ -12,11 +12,13 @@ from src.mixins.validator_mixin import InputField
 
 
 class SignUp(FrameBase):
+    """"Sign up" window."""
     def __init__(self, root: PasswordManager, **kwargs):
         super().__init__(root, **kwargs)
         self.__initialize_gui()
 
     def __initialize_gui(self):
+        """Populates window with widgets."""
         # Side image
         self.img_canvas = customtkinter.CTkLabel(
             self,
@@ -182,10 +184,11 @@ class SignUp(FrameBase):
         self.sign_in_btn.place(x=50, y=520)
 
     def __submit(self):
+        """Submit the form with user's details."""
         password = self.password_input.get()
         result = self.validate({
             "email": InputField(self.email_input.get(), "required|unique:User"),
-            "password": InputField(password, "required"),
+            "password": InputField(password, "required|min:8"),
             "password_confirmation": InputField(
                 self.confirm_password_input.get(),
                 f"required|match:{password}"

@@ -4,18 +4,12 @@ from src.mixins.query_builder_mixin import DataType
 from src.libraries.table import TableBase
 from src.utils.helpers import SECOND
 
-# references = (
-#   ('foreign_key', 'reference_table', 'reference_column'), ...
-# )
-# selectable = {
-#   "table_name": (column, ...), ...
-# } or (column, ...)
-
 
 @dataclass
 class Users(TableBase):
+    """Details of `users` table."""
     name = "users"
-    fields = {
+    columns = {
         "id": DataType.integer(primary_key=True, autoincrement=True),
         "email": DataType.text(null=False),
         "password": DataType.text(null=False),
@@ -29,8 +23,9 @@ class Users(TableBase):
 
 @dataclass
 class Passwords(TableBase):
+    """Details of `users` table."""
     name = "passwords"
-    fields = {
+    columns = {
         "id": DataType.integer(primary_key=True, autoincrement=True),
         "user_id": DataType.integer(null=False),
         "account": DataType.text(null=False),

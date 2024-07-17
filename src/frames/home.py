@@ -11,6 +11,7 @@ from src.utils import window
 
 
 class Home(FrameBase):
+    """"Home" window"""
     def __init__(self, root: PasswordManager, **kwargs):
         super().__init__(root, **kwargs)
 
@@ -31,7 +32,8 @@ class Home(FrameBase):
         self.search_input.configure(state=customtkinter.DISABLED)
 
     def __initialize_gui(self):
-        # Link to user settings
+        """Populates window with widgets."""
+        # Link to user's settings
         self.settings_btn = customtkinter.CTkButton(
             self,
             width=350,
@@ -318,6 +320,7 @@ class Home(FrameBase):
         self.lock_btn.place(x=835, y=625)
 
     def __toggle_passwords_table(self):
+        """Toggle accessibility to the passwords table."""
         if self.passwords.is_locked:
             self.passwords.unlock()
             self.lock_btn.configure(text="Lock", image=self.lock_icon)
@@ -326,6 +329,7 @@ class Home(FrameBase):
             self.lock_btn.configure(text="Unlock", image=self.unlock_icon)
 
     def __search_passwords(self, _event=None):
+        """Performs search in user's passwords. Shows results in the table."""
         search_param = self.search_input.get()
 
         if search_param != "":
@@ -342,10 +346,12 @@ class Home(FrameBase):
             self.__render_content()
 
     def __auto_lock(self):
+        """Denies accessibility to the passwords table, after chosen time period, if a "lock timer" is set."""
         if Auth.user.lock_timer != self.root.LOCK_TIMERS["Never"]:
             self.root.after(Auth.user.lock_timer, self.__lock_passwords_table)
 
     def __unlock_passwords_table(self):
+        """Grants accessibility to the passwords table."""
         def unlock():
             self.pass_input.delete(0, customtkinter.END)
             self.__toggle_passwords_table()
@@ -373,6 +379,7 @@ class Home(FrameBase):
             self.root.flash_message(next(iter(result.errors.values())), "danger")
 
     def __lock_passwords_table(self):
+        """Denies accessibility to the passwords table."""
         if not self.passwords.is_locked:
             self.__clear_form()
             self.clear_entries(self.search_input)
@@ -383,6 +390,7 @@ class Home(FrameBase):
             self.root.flash_message("Passwords locked.", "success")
 
     def __lock_btn_click(self):
+        """"Lock\Unlock" button click command"""
         state = f"{self.lock_btn.cget("text")}".lower()
 
         if state == "unlock":
@@ -391,6 +399,7 @@ class Home(FrameBase):
             self.__lock_passwords_table()
 
     def __save_to_pdf(self):
+        """Generates pdf file with user's passwords table."""
         result = self.validate({
             "password": InputField(self.pass_input.get(), "required")
         })
@@ -410,10 +419,12 @@ class Home(FrameBase):
             self.root.flash_message(next(iter(result.errors.values())), "danger")
 
     def __generate_password(self):
+        """Generates random string ant set it as "password" entry value."""
         self.clear_entries(self.password_input)
         self.password_input.insert(0, helpers.generate_password())
 
     def __render_content(self):
+        """Shows user's passwords table."""
         if self.passwords.user:
             self.enable_buttons(self.pdf_btn, self.lock_btn)
             self.passwords.destroy_search_table()
@@ -423,6 +434,7 @@ class Home(FrameBase):
 
     @staticmethod
     def __get_user_passwords() -> list:
+        """Retrieves all user's passwords from the database."""
         return Password.find_by(
             "user_id = ?",
             [Auth.user.id, ],
@@ -431,6 +443,7 @@ class Home(FrameBase):
         ) or []
 
     def transfer_to_form(self, entry: Row):
+        """Sets form's entries values to selected row's values."""
         self.__clear_form()
         self.passwords.selected_id = entry["id"]
         self.web_app_name_input.insert(0, entry["account"])
@@ -445,10 +458,12 @@ class Home(FrameBase):
         self.edit_mode = True
 
     def __clear_form(self):
+        """Clears form's entries values."""
         self.passwords.selected_id = None
         self.clear_entries(self.web_app_name_input, self.username_input, self.password_input)
 
     def __cancel_form_edit(self):
+        """Changes form's mode from edit row to add row."""
         self.__clear_form()
 
         if self.edit_mode:
@@ -458,12 +473,14 @@ class Home(FrameBase):
 
         self.edit_mode = False
 
-    def __update_passwords_table(self):
+    def __refresh_window(self):
+        """Refreshes "Home" window."""
         self.clear_entries(self.search_input)
         self.__render_content()
         self.__cancel_form_edit()
 
     def __submit_password(self):
+        """Creates entry in database and user's passwords list. Refreshes "Home" window on success."""
         result = self.validate({
             "web/app": InputField(self.web_app_name_input.get(), "required"),
             "username": InputField(self.username_input.get(), "required"),
@@ -479,7 +496,7 @@ class Home(FrameBase):
                 (Auth.user.id, entry["web/app"], username, password)
             )
             self.passwords.add(Password.find_latest())
-            self.__update_passwords_table()
+            self.__refresh_window()
 
             if self.lock_btn.cget("text") == "Unlock":
                 self.__lock_passwords_table()
@@ -491,6 +508,7 @@ class Home(FrameBase):
             self.root.flash_message(next(iter(result.errors.values())), "danger")
 
     def __update_password(self):
+        """Updates entry in database and user's passwords list. Refreshes "Home" window on success."""
         result = self.validate({
             "web/app": InputField(self.web_app_name_input.get(), "required"),
             "username": InputField(self.username_input.get(), "required"),
@@ -509,16 +527,17 @@ class Home(FrameBase):
                     }
                 )
                 self.passwords.update(Password.find_by_id(self.passwords.selected_id))
-                self.__update_passwords_table()
+                self.__refresh_window()
                 self.root.flash_message("Changes saved successfully", "success")
         else:
             self.root.flash_message(next(iter(result.errors.values())), "danger")
 
     def __delete_password(self):
+        """Deletes entry from database and user's passwords list. Refreshes "Home" window on success."""
         if self.confirmation_prompt("Delete entry?", 300, 100):
             Password.delete(self.passwords.selected_id)
             self.passwords.delete(self.passwords.selected_id)
-            self.__update_passwords_table()
+            self.__refresh_window()
 
             if not self.passwords.user:
                 self.disable_buttons(self.pdf_btn)
@@ -526,6 +545,7 @@ class Home(FrameBase):
             self.root.flash_message("Entry deleted successfully", "success")
 
     def copy_to_clipboard(self, text):
+        """Copies text to clipboard and clears it after 30 seconds."""
         def clear_clipboard():
             if pyperclip.paste() == text:
                 pyperclip.copy("")
@@ -535,6 +555,7 @@ class Home(FrameBase):
         self.root.after(self.root.LOCK_TIMERS["30 sec"], clear_clipboard)
 
     def __generate_pdf(self, password: str):
+        """Generates and saves pdf file with user's passwords table."""
         path = self.root.save_file_dialog()
 
         if path:
@@ -554,6 +575,7 @@ class Home(FrameBase):
             self.root.flash_message("Document saved successfully.", "success")
 
     def __toggle_add_btn(self, add_btn_widget):
+        """Toggles "Add/Cancel" button's appearance."""
         if add_btn_widget.cget("text") == "Add":
             add_btn_widget.configure(
                 text="Cancel",
@@ -567,6 +589,7 @@ class Home(FrameBase):
 
 
 class Passwords:
+    """Passwords management class for "Home" window"""
     def __init__(self, master: Home, user_passwords: list):
         self.master: Home = master
         self.is_locked: bool = False
@@ -587,6 +610,7 @@ class Passwords:
         self.search_table = self.__create_rows(self.__search)
 
     def show(self, table):
+        """Displays the passwords table content."""
         if table is self.table:
             self.is_hidden = False
 
@@ -594,11 +618,13 @@ class Passwords:
             self.show_row(index, row)
 
     def destroy_search_table(self):
+        """Destroys all widgets from search results table."""
         for row in self.search_table:
             for widget in row.values():
                 widget.destroy()
 
     def hide_table(self):
+        """Hides table with all user's passwords."""
         if not self.is_hidden:
             for row in self.table:
                 for widget in row.values():
@@ -608,6 +634,7 @@ class Passwords:
 
     @staticmethod
     def show_row(index, row):
+        """Displays row."""
         index += 1
         row["account_btn"].grid(row=index, column=0, padx=5, pady=8)
         row["account_btn"].grid_propagate(False)
@@ -616,6 +643,7 @@ class Passwords:
         row["username_btn"].grid_propagate(False)
 
     def lock(self):
+        """Sets widgets state to "disabled" in the passwords table."""
         self.is_locked = True
 
         for row in self.table:
@@ -625,6 +653,7 @@ class Passwords:
                 widget.configure(state=customtkinter.DISABLED)
 
     def unlock(self):
+        """Sets widgets state to "normal" in the passwords table."""
         self.is_locked = False
 
         for row in self.table:
@@ -634,6 +663,7 @@ class Passwords:
                 widget.configure(state=customtkinter.NORMAL)
 
     def __create_rows(self, data: list):
+        """Creates list of table rows."""
         rows = []
 
         for entry in data:
@@ -642,6 +672,7 @@ class Passwords:
         return rows
 
     def __create_row(self, entry):
+        """Creates table's row."""
         image = self.master.key_icon_disabled if self.is_locked else self.master.key_icon
         state = customtkinter.DISABLED if self.is_locked else customtkinter.NORMAL
         username = helpers.decrypt_data(entry["username"], Auth.user.key)
@@ -687,27 +718,32 @@ class Passwords:
         }
 
     def add(self, entry):
+        """Adds entry to the user's passwords list and table's row."""
         self.user.insert(0, entry)
         self.table.insert(0, self.__create_row(entry))
 
     def update(self, entry):
+        """Updates entry in the user's passwords list and table's row."""
         index = self.__find_by_id(entry["id"])
         self.user[index] = entry
         self.__destroy_row(self.table, index)
         self.table[index] = self.__create_row(entry)
 
     def delete(self, __id):
+        """Deletes entry from the user's passwords list and table's row."""
         index = self.__find_by_id(__id)
         del self.user[index]
         self.__destroy_row(self.table, index)
         del self.table[index]
 
     def __find_by_id(self, __id):
+        """Gets index of Row object in the user's passwords list where ids matches."""
         for index, entry in enumerate(self.user):
             if entry["id"] == __id:
                 return index
 
     @staticmethod
     def __destroy_row(table: list, index: int):
+        """Destroy all widgets in the table's row."""
         for column in table[index].values():
             column.destroy()

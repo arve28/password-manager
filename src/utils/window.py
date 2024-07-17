@@ -1,3 +1,4 @@
+"""Available windows names."""
 HOME = "Home"
 LOG_IN = "LogIn"
 SIGN_UP = "SignUp"
