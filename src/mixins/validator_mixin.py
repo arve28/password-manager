@@ -16,9 +16,9 @@ class InputField:
     """Stores information about the input."""
     def __init__(self, value: str, validation: str | list[str | tuple[str, int | str]]):
         """
-        Available validations tuple :class:`ValidatorMixin`.available_validations()
+        Available validations tuple :class:`ValidatorMixin`.available_validations().
         :param value: Input's value.
-        :param validation: Validations to apply - "validation|validation2:3|..." or [validation, (validation1, 3), ...]
+        :param validation: Validations to apply - "validation|validation2:3|..." or [validation, (validation1, 3), ...].
         """
         self.value = value.strip()
         self.validations = validation

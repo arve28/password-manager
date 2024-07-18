@@ -33,7 +33,7 @@ def get_key_by_value(dictionary: dict, target_value):
     """
     Gets dictionary key by value.
     :param dictionary: Dictionary to search in.
-    :param target_value: Value to match
+    :param target_value: Value to match.
     """
     for key, value in dictionary.items():
         if value == target_value:
@@ -48,13 +48,13 @@ def regexp(expr, item):
 
 
 def hash_password(password: str) -> str:
-    """Hash the password with the salt"""
+    """Hash the password with the salt."""
     hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
     return hashed_password.decode()
 
 
 def verify_password(hashed_password: str, provided_password: str) -> bool:
-    """Verify the provided password against the hashed password"""
+    """Verify the provided password against the hashed password."""
     return bcrypt.checkpw(provided_password.encode(), hashed_password.encode())
 
 

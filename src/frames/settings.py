@@ -10,6 +10,7 @@ from src import style
 
 
 class Settings(FrameBase):
+    """"Settings" window."""
     def __init__(self, root: PasswordManager, **kwargs):
         super().__init__(root, **kwargs)
         self.__initialize_gui()
@@ -357,7 +358,7 @@ class Settings(FrameBase):
         self.root.show(window.HOME)
 
     def __switch_mode(self):
-        """Updates user's display mode (dark/light)."""
+        """Updates user's display mode (`dark/light`)."""
         choice = self.color_mode_switch.get()
         User.update(Auth.user.id, {"color_mode": choice})
         Auth.user.update()

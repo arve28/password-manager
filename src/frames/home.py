@@ -11,7 +11,7 @@ from src.utils import window
 
 
 class Home(FrameBase):
-    """"Home" window"""
+    """"Home" window."""
     def __init__(self, root: PasswordManager, **kwargs):
         super().__init__(root, **kwargs)
 
@@ -390,7 +390,7 @@ class Home(FrameBase):
             self.root.flash_message("Passwords locked.", "success")
 
     def __lock_btn_click(self):
-        """"Lock\Unlock" button click command"""
+        """`Lock/Unlock` button click command."""
         state = f"{self.lock_btn.cget("text")}".lower()
 
         if state == "unlock":
@@ -575,7 +575,7 @@ class Home(FrameBase):
             self.root.flash_message("Document saved successfully.", "success")
 
     def __toggle_add_btn(self, add_btn_widget):
-        """Toggles "Add/Cancel" button's appearance."""
+        """Toggles `Add/Cancel` button's appearance."""
         if add_btn_widget.cget("text") == "Add":
             add_btn_widget.configure(
                 text="Cancel",
@@ -589,7 +589,7 @@ class Home(FrameBase):
 
 
 class Passwords:
-    """Passwords management class for "Home" window"""
+    """Passwords management class for "Home" window."""
     def __init__(self, master: Home, user_passwords: list):
         self.master: Home = master
         self.is_locked: bool = False
