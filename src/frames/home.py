@@ -570,7 +570,7 @@ class Home(FrameBase):
             data.insert(0, ["Web/App", "Username", "Password"])
 
             helpers.generate_pdf(
-                path, data, "arvydas.bloze28@gmail.com", password
+                path, data, Auth.user.email, password
             )
             self.root.flash_message("Document saved successfully.", "success")
 
