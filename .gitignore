@@ -87,5 +87,5 @@ $RECYCLE.BIN/
 # Environments
 .env
 .env.*.local
-.iss
-.exe
+*.iss
+*.exe
