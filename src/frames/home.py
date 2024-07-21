@@ -28,7 +28,6 @@ class Home(FrameBase):
 
         # Render passwords list
         self.__render_content()
-        self.passwords.lock()
         self.search_input.configure(state=customtkinter.DISABLED)
 
     def __initialize_gui(self):
@@ -348,7 +347,7 @@ class Home(FrameBase):
     def __auto_lock(self):
         """Denies accessibility to the passwords table, after chosen time period, if a "lock timer" is set."""
         if Auth.user.lock_timer != self.root.LOCK_TIMERS["Never"]:
-            self.root.after(Auth.user.lock_timer, self.__lock_passwords_table)
+            self.after(Auth.user.lock_timer, self.__lock_passwords_table)
 
     def __unlock_passwords_table(self):
         """Grants accessibility to the passwords table."""
@@ -381,7 +380,7 @@ class Home(FrameBase):
     def __lock_passwords_table(self):
         """Denies accessibility to the passwords table."""
         if not self.passwords.is_locked:
-            self.__clear_form()
+            self.__cancel_form_edit()
             self.clear_entries(self.search_input)
             self.search_input.configure(state=customtkinter.DISABLED)
             self.passwords.destroy_search_table()
@@ -517,16 +516,20 @@ class Home(FrameBase):
 
         if not result.errors:
             entry = result.passed
-            if self.confirmation_prompt("Save changes?", 300, 100):
+
+            # In case the table auto locks and clears self.passwords.selected_id value
+            target_id = self.passwords.selected_id
+
+            if self.show_modal("Save changes?", 300, 130, ("Yes", True), ("No", False)):
                 Password.update(
-                    self.passwords.selected_id,
+                    target_id,
                     {
                         "account": entry["web/app"],
                         "username": helpers.encrypt_data(entry["username"], (Auth.user.key, Auth.user.salt)),
                         "password": helpers.encrypt_data(entry["password"], (Auth.user.key, Auth.user.salt))
                     }
                 )
-                self.passwords.update(Password.find_by_id(self.passwords.selected_id))
+                self.passwords.update(Password.find_by_id(target_id))
                 self.__refresh_window()
                 self.root.flash_message("Changes saved successfully", "success")
         else:
@@ -534,9 +537,13 @@ class Home(FrameBase):
 
     def __delete_password(self):
         """Deletes entry from database and user's passwords list. Refreshes "Home" window on success."""
-        if self.confirmation_prompt("Delete entry?", 300, 100):
-            Password.delete(self.passwords.selected_id)
-            self.passwords.delete(self.passwords.selected_id)
+
+        # In case the table auto locks and clears self.passwords.selected_id value
+        target_id = self.passwords.selected_id
+
+        if self.show_modal("Delete entry?", 300, 130, ("Yes", True), ("No", False)):
+            Password.delete(target_id)
+            self.passwords.delete(target_id)
             self.__refresh_window()
 
             if not self.passwords.user:
@@ -592,7 +599,7 @@ class Passwords:
     """Passwords management class for "Home" window."""
     def __init__(self, master: Home, user_passwords: list):
         self.master: Home = master
-        self.is_locked: bool = False
+        self.is_locked: bool = True
         self.is_hidden: bool = False
         self.user: list[Row] = user_passwords
         self.__search: list[Row] = []

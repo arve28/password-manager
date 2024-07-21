@@ -171,7 +171,7 @@ class SignUp(FrameBase):
         # Sign in button
         self.sign_in_btn = customtkinter.CTkButton(
             self.form_frame,
-            text="Sign in",
+            text="Log in",
             text_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
             font=self.root.helvetica(15),
             fg_color=self.root.THEME_COLORS[style.TURQUOISE].secondary,
@@ -208,11 +208,11 @@ class SignUp(FrameBase):
             self.successful_log_in()
             self.root.flash_message("Signed up successfully.", "success")
             pyperclip.copy(key)
-            self.confirmation_prompt(
+            self.show_modal(
                 f"Key (copied to clipboard): {key}\n"
                 f"Store this key somewhere safe.\nIt will not be shown again.\n"
                 f"If you lose it, you'll not be able to access your account!",
-                500, 150
+                500, 180, ("Got it", True)
             )
         else:
             self.root.flash_message(next(iter(result.errors.values())), "danger")

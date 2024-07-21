@@ -55,16 +55,13 @@ class FrameBase(customtkinter.CTkFrame, ValidatorMixin):
                     fg_color=self.root.colors.disabled
                 )
 
-    def confirmation_prompt(self, message, width: int, height: int) -> bool:
-        """
-        Show confirmation prompt.
-        :return: True if "yes" button is clicked or False if otherwise.
-        """
-        from src.dialogs.confirmation_prompt import ConfirmationPrompt
+    def show_modal(self, message, width: int, height: int, *buttons) -> bool:
+        """Show top level prompt."""
+        from src.dialogs.modal import Modal
 
-        prompt = ConfirmationPrompt(self.root, message, width, height)
-        self.root.wait_window(prompt)
-        return prompt.result
+        modal = Modal(self.root, message, width, height, buttons)
+        self.root.wait_window(modal)
+        return modal.result
 
     @staticmethod
     def toggle_password_visibility(entry_widget: customtkinter.CTkEntry):
