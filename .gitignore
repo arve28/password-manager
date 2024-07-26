@@ -89,3 +89,4 @@ $RECYCLE.BIN/
 .env.*.local
 *.iss
 *.exe
+*.lock

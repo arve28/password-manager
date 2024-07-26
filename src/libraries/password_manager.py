@@ -1,10 +1,11 @@
+import os
+import sys
 import customtkinter
 import pystray
 import gc
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from typing import Dict
 from PIL import Image
-from src.libraries.auth import Auth, Credentials
 from src.utils import window
 from src.libraries.database import Database as Db
 from src.utils.helpers import center_window, SECOND, MINUTE, resource_path
@@ -13,6 +14,7 @@ from src import style
 
 class PasswordManager(customtkinter.CTk):
     """Password manager application's class."""
+    LOCK_FILE = resource_path("app.lock")
     DB_PATH: str = "data\\password_manager.db"
     HEIGHT: int = 700
     WIDTH: int = 1000
@@ -65,6 +67,10 @@ class PasswordManager(customtkinter.CTk):
         self.current_window: str | None = None
         self.windows: dict = {}
         self.__setup()
+
+        if PasswordManager.instance_is_running():
+            messagebox.showinfo("Password Manager", "Password Manager is running.")
+            sys.exit(0)
 
     def __setup(self):
         """Setups the application."""
@@ -209,6 +215,7 @@ class PasswordManager(customtkinter.CTk):
     def __on_closing(self):
         """Operations before closing the application."""
         Db.close_connection()
+        self.remove_lock_file()
         self.destroy()
 
     def __on_minimize(self, _event=None):
@@ -240,3 +247,16 @@ class PasswordManager(customtkinter.CTk):
         )
         tray_icon = pystray.Icon("Password Manager", image, "Password Manager", menu)
         tray_icon.run_detached()
+
+    @staticmethod
+    def instance_is_running():
+        if os.path.exists(PasswordManager.LOCK_FILE):
+            return True
+        open(PasswordManager.LOCK_FILE, 'w').close()
+        return False
+
+    @staticmethod
+    def remove_lock_file():
+        """Remove the lock file when the application exits."""
+        if os.path.exists(PasswordManager.LOCK_FILE):
+            os.remove(PasswordManager.LOCK_FILE)
