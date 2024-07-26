@@ -16,6 +16,7 @@ class FrameBase(customtkinter.CTkFrame, ValidatorMixin):
             corner_radius=0
         )
         self.root = master
+        self.password_placeholder = "●"
 
     def disable_buttons(self, *args):
         """Changes widget's state to "disabled" and modifies its appearance."""
@@ -63,13 +64,12 @@ class FrameBase(customtkinter.CTkFrame, ValidatorMixin):
         self.root.wait_window(modal)
         return modal.result
 
-    @staticmethod
-    def toggle_password_visibility(entry_widget: customtkinter.CTkEntry):
+    def toggle_password_visibility(self, entry_widget: customtkinter.CTkEntry):
         """Toggle entries content between "show" value and actual value."""
-        if entry_widget.cget("show") == "‧":
+        if entry_widget.cget("show") == self.password_placeholder:
             entry_widget.configure(show="")
         else:
-            entry_widget.configure(show="‧")
+            entry_widget.configure(show=self.password_placeholder)
 
     @staticmethod
     def disable_widgets(*widgets):
@@ -89,8 +89,7 @@ class FrameBase(customtkinter.CTkFrame, ValidatorMixin):
         Sets app's appearance to the user's theme color and mode.
         Shows "Home" window.
         """
-        self.root.update_theme(Auth.user.theme_color)
-        self.root.update_mode(Auth.user.color_mode)
+        self.root.set_appearance(Auth.user.theme_color, Auth.user.color_mode)
         self.root.load_windows(window.HOME, window.SETTINGS)
         self.root.destroy_windows(window.LOG_IN, window.SIGN_UP)
         self.root.show(window.HOME)

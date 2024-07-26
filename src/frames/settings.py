@@ -248,7 +248,7 @@ class Settings(FrameBase):
         # New password input
         self.new_password_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=350,
             height=40,
             border_color=self.root.colors.primary,
@@ -279,7 +279,7 @@ class Settings(FrameBase):
         # Confirm new password input
         self.confirm_new_password_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=350,
             height=40,
             border_color=self.root.colors.primary,
@@ -291,6 +291,35 @@ class Settings(FrameBase):
         self.confirm_new_password_input.bind(
             "<Double-3>",
             lambda event: self.toggle_password_visibility(self.confirm_new_password_input)
+        )
+
+        # Passcode input label
+        self.passcode_label = customtkinter.CTkLabel(
+            self.form_frame,
+            text="✱  Passcode:",
+            font=self.root.helvetica(17),
+            text_color=self.root.colors.primary,
+            compound="left",
+            anchor="w",
+            width=350
+        )
+        self.passcode_label.place(x=50, y=470)
+
+        # Passcode input
+        self.passcode_input = customtkinter.CTkEntry(
+            self.form_frame,
+            show=self.password_placeholder,
+            width=350,
+            height=40,
+            border_color=self.root.colors.primary,
+            fg_color=self.root.color_mode.primary,
+            text_color=self.root.color_mode.secondary,
+            font=self.root.helvetica(17)
+        )
+        self.passcode_input.place(x=50, y=500)
+        self.passcode_input.bind(
+            "<Double-3>",
+            lambda event: self.toggle_password_visibility(self.passcode_input)
         )
 
         # Current password input label
@@ -310,7 +339,7 @@ class Settings(FrameBase):
         # Password input
         self.current_password_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=350,
             height=40,
             border_color=self.root.colors.primary,
@@ -423,6 +452,11 @@ class Settings(FrameBase):
             text_color=self.root.color_mode.secondary
         )
 
+        self.passcode_input.configure(
+            fg_color=self.root.color_mode.primary,
+            text_color=self.root.color_mode.secondary
+        )
+
         self.current_password_input.configure(
             fg_color=self.root.color_mode.primary,
             text_color=self.root.color_mode.secondary
@@ -516,6 +550,14 @@ class Settings(FrameBase):
             border_color=self.root.colors.primary
         )
 
+        self.passcode_label.configure(
+            text_color=self.root.colors.primary
+        )
+
+        self.passcode_input.configure(
+            border_color=self.root.colors.primary
+        )
+
         self.current_password_label.configure(
             image=customtkinter.CTkImage(
                 light_image=self.root.images.key),
@@ -543,7 +585,8 @@ class Settings(FrameBase):
             "new_password": InputField(new_password, "min:8"),
             "new_password_confirmation": InputField(
                 self.confirm_new_password_input.get(),
-                f"match:{new_password}")
+                f"match:{new_password}"),
+            "passcode": InputField(self.passcode_input.get(), "numeric|min:4")
         })
 
         if not results.errors:
@@ -564,11 +607,13 @@ class Settings(FrameBase):
     def __prepare_data(self, data):
         """Prepares details data to be updated."""
         new_password = hash_password(data["new_password"]) if data["new_password"] else None
+        passcode = hash_password(data["passcode"]) if data["passcode"] else None
 
         lock_timer = self.root.LOCK_TIMERS[self.lock_timer_option_menu.get()]
         data_to_update = {
             "email": data["email"] if data["email"] != Auth.user.email else None,
             "password": new_password,
+            "passcode": passcode,
             "lock_timer": lock_timer if lock_timer != Auth.user.lock_timer else None
         }
         return {field: value for field, value in data_to_update.items() if value is not None}

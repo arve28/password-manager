@@ -109,7 +109,7 @@ class SignUp(FrameBase):
         # Password input
         self.password_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=350,
             height=40,
             border_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
@@ -139,7 +139,7 @@ class SignUp(FrameBase):
         # Confirm password input
         self.confirm_password_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=350,
             height=40,
             border_color=self.root.THEME_COLORS[style.TURQUOISE].primary,

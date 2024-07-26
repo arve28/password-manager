@@ -12,8 +12,9 @@ class Users(TableBase):
     columns = {
         "id": DataType.integer(primary_key=True, autoincrement=True),
         "email": DataType.text(null=False),
-        "password": DataType.text(null=False),
-        "key": DataType.text(null=False),
+        "password": DataType.blob(null=False),
+        "passcode": DataType.blob(),
+        "key": DataType.blob(null=False),
         "salt": DataType.blob(null=False),
         "theme_color": DataType.text(null=False, default=style.TURQUOISE),
         "color_mode": DataType.text(null=False, default=style.LIGHT),
@@ -23,7 +24,7 @@ class Users(TableBase):
 
 @dataclass
 class Passwords(TableBase):
-    """Details of `users` table."""
+    """Details of `passwords` table."""
     name = "passwords"
     columns = {
         "id": DataType.integer(primary_key=True, autoincrement=True),

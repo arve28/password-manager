@@ -126,7 +126,7 @@ class Home(FrameBase):
         # Password input
         self.password_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=330,
             height=40,
             text_color=self.root.color_mode.secondary,
@@ -285,16 +285,16 @@ class Home(FrameBase):
         # User password/passcode input
         self.pass_input = customtkinter.CTkEntry(
             self,
-            show="‧",
+            show=self.password_placeholder,
             width=300,
             height=50,
             text_color=self.root.color_mode.secondary,
             border_color=self.root.colors.primary,
             border_width=3,
-            placeholder_text="Enter password",
+            placeholder_text="Enter password or passcode",
             placeholder_text_color=self.root.colors.disabled,
             fg_color=self.root.color_mode.primary,
-            font=self.root.helvetica(20)
+            font=self.root.helvetica(18)
         )
         self.pass_input.place(x=525, y=625)
         self.pass_input.bind(
@@ -352,6 +352,7 @@ class Home(FrameBase):
     def __unlock_passwords_table(self):
         """Grants accessibility to the passwords table."""
         def unlock():
+            Auth.user.reset_attempts()
             self.pass_input.delete(0, customtkinter.END)
             self.__toggle_passwords_table()
             self.search_input.configure(state=customtkinter.NORMAL)
@@ -364,15 +365,27 @@ class Home(FrameBase):
             else:
                 self.root.flash_message("Wrong password", "danger")
 
+        def check_both():
+            if (helpers.verify_password(password, user_input) or
+                    helpers.verify_password(passcode, user_input)):
+                unlock()
+            else:
+                Auth.user.decrease_attempts()
+                attempts = Auth.user.attempts
+                self.root.flash_message(
+                    f"Wrong password or passcode.\n"
+                    f"{f"Attempts remaining: {attempts}" if attempts > 0 else "Password required."}", "danger")
+
         result = self.validate({
             "password": InputField(self.pass_input.get(), "required")
         })
 
         if not result.errors:
             password = Auth.user.password
+            passcode = Auth.user.passcode
             user_input = result.passed["password"]
             self.pass_input.configure(border_color=self.root.colors.primary)
-            check_password()
+            check_both() if Auth.user.passcode and Auth.user.attempts > 0 else check_password()
         else:
             self.pass_input.configure(border_color=self.root.colors.danger.border)
             self.root.flash_message(next(iter(result.errors.values())), "danger")

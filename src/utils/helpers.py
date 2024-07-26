@@ -47,15 +47,14 @@ def regexp(expr, item):
     return reg.search(item) is not None
 
 
-def hash_password(password: str) -> str:
+def hash_password(password: str) -> bytes:
     """Hash the password with the salt."""
-    hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
-    return hashed_password.decode()
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
 
 
-def verify_password(hashed_password: str, provided_password: str) -> bool:
+def verify_password(hashed_password: bytes, provided_password: str) -> bool:
     """Verify the provided password against the hashed password."""
-    return bcrypt.checkpw(provided_password.encode(), hashed_password.encode())
+    return bcrypt.checkpw(provided_password.encode(), hashed_password)
 
 
 def center_window(root: customtkinter.CTk, width: int, height: int):

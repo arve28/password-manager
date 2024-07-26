@@ -4,6 +4,7 @@ import gc
 from tkinter import filedialog
 from typing import Dict
 from PIL import Image
+from src.libraries.auth import Auth, Credentials
 from src.utils import window
 from src.libraries.database import Database as Db
 from src.utils.helpers import center_window, SECOND, MINUTE, resource_path
@@ -156,7 +157,7 @@ class PasswordManager(customtkinter.CTk):
         message_label.place(x=250, y=0)
         self.after(duration*1000, lambda: message_label.destroy())
 
-    def update_theme(self, theme):
+    def update_theme(self, theme: str):
         """
         Updates the application's theme color.
         :param theme: color name from THEME_COLORS
@@ -168,7 +169,7 @@ class PasswordManager(customtkinter.CTk):
         else:
             raise KeyError()
 
-    def update_mode(self, mode):
+    def update_mode(self, mode: str):
         """
         Updates the application's display mode.
         :param mode: mode name from COLOR_MODES
@@ -179,6 +180,10 @@ class PasswordManager(customtkinter.CTk):
             self.images.update(color_mode=mode)
         else:
             raise KeyError()
+
+    def set_appearance(self, theme: str, mode: str):
+        self.update_theme(theme)
+        self.update_mode(mode)
 
     @staticmethod
     def helvetica(size: int, weight: str = "bold") -> tuple:

@@ -9,21 +9,31 @@ class User:
     """Authenticated user object."""
     id: int
     email: str
-    password: str
+    password: bytes
+    passcode: bytes | None
     key: bytes
     salt: bytes
     theme_color: str
     color_mode: str
     lock_timer: int
+    attempts: int = 3
 
     def update(self):
         """Refreshes user's details."""
         user = UserModel.find_by_id(self.id)
         self.email = user["email"]
         self.password = user["password"]
+        self.passcode = user["passcode"]
         self.theme_color = user["theme_color"]
         self.color_mode = user["color_mode"]
         self.lock_timer = user["lock_timer"]
+        self.reset_attempts()
+
+    def decrease_attempts(self):
+        self.attempts -= 1
+
+    def reset_attempts(self):
+        self.attempts = 3
 
 
 @dataclass
@@ -50,6 +60,7 @@ class Auth:
                     id=user["id"],
                     email=user["email"],
                     password=user["password"],
+                    passcode=user["passcode"],
                     key=helpers.get_key(credentials.key, user["salt"]),
                     salt=user["salt"],
                     theme_color=user["theme_color"],

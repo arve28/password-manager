@@ -106,7 +106,7 @@ class LogIn(FrameBase):
         # Password input
         self.password_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=350,
             height=40,
             border_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
@@ -138,7 +138,7 @@ class LogIn(FrameBase):
         # Key input
         self.key_input = customtkinter.CTkEntry(
             self.form_frame,
-            show="‧",
+            show=self.password_placeholder,
             width=350,
             height=40,
             border_color=self.root.THEME_COLORS[style.TURQUOISE].primary,
