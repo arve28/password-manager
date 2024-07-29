@@ -15,7 +15,7 @@ from src import style
 class PasswordManager(customtkinter.CTk):
     """Password manager application's class."""
     LOCK_FILE = resource_path("app.lock")
-    DB_PATH: str = "data\\password_manager.db"
+    DB_PATH: str = resource_path("data\\password_manager.db")
     HEIGHT: int = 700
     WIDTH: int = 1000
 
@@ -74,7 +74,7 @@ class PasswordManager(customtkinter.CTk):
 
     def __setup(self):
         """Setups the application."""
-        Db.create_connection(resource_path(self.DB_PATH))
+        Db.create_connection(self.DB_PATH)
         self.load_windows(window.LOG_IN, window.SIGN_UP)
         self.iconbitmap(resource_path("icon.ico"))
         self.title("Password Manager")
