@@ -338,7 +338,7 @@ class Home(FrameBase):
                 item=search_param,
                 search_in=["account"],
                 additional_condition="user_id = :user_id",
-                named_params={"user_id": 1}
+                named_params={"user_id": Auth.user.id}
             )
             self.passwords.show(self.passwords.search_table)
         else:
